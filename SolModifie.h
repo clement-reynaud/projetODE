@@ -33,7 +33,7 @@ float tabModif[8] = {
 	0.2
 };
 
-float ArêtesGlace[Nombre_de_sommets * 3] = {
+float AretesGlace[Nombre_de_sommets * 3] = {
 	0.0f, 0.0f, HauteurMesh,
 	0.0f * tabModif[0], R * tabModif[0], HauteurMesh,
 	tabx[1] * tabModif[1], taby[1] * tabModif[1], HauteurMesh,
