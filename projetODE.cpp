@@ -47,6 +47,7 @@
 #include "projetODE.h"
 #include "client.h"
 #include "terrain.h"
+#include "SolModifie.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable:4244 4305)  // for VC++, no precision loss complaints
@@ -126,6 +127,20 @@ bool tp;
 static int currentRobot;
 extern TcpClientsArray tcpClientsArray;
 
+//Sol Glace
+
+#define NUM 10
+#define DENSITY (5.0)
+#define GPB 3
+
+struct MyObject {
+	dBodyID body;			// the body
+	dGeomID geom[GPB];		// geometries representing this body
+};
+
+static MyObject obj[NUM];
+dGeomID TriMesh1;
+static dTriMeshDataID TriData1;
 
 void initNetRegister(NetRegister *netRegister) { 
 	netRegister->size=0;
@@ -365,6 +380,30 @@ static void nearCallback(void*, dGeomID o1, dGeomID o2)
 {
     int i, n;
     
+	//Sol Glace
+
+	if ((o1 == obj[0].geom[0] && o2 != obj[0].geom[0] && o2 != ground_box && o2 != ground) || (o2 == obj[0].geom[0] && o1 != obj[0].geom[0] && o1 != ground && o1 != ground_box)) {
+		const int N = 10;
+		dContact contact[N];
+		n = dCollide(o1, o2, N, &contact[0].geom, sizeof(dContact));
+		if (n > 0) {
+			for (i = 0; i < n; i++) {
+				contact[i].surface.mode = dContactSlip1 | dContactSlip2 |
+					dContactSoftERP | dContactSoftCFM | dContactApprox1;
+				contact[i].surface.mu = 0.2;
+				contact[i].surface.slip1 = 10;
+				contact[i].surface.slip2 = 0.1;
+				contact[i].surface.soft_erp = 0.5;
+				contact[i].surface.soft_cfm = 0.3;
+				dJointID c = dJointCreateContact(world, contactgroup, &contact[i]);
+				dJointAttach(c,
+					dGeomGetBody(contact[i].geom.g1),
+					dGeomGetBody(contact[i].geom.g2));
+			}
+		}
+		return;
+	}
+
     // only collide things with the ground
     int g1 = (o1 == ground || o1 == ground_box);
     int g2 = (o2 == ground || o2 == ground_box);
@@ -599,7 +638,32 @@ static void simLoop(int pause)
 		netRecvPositions();
 	}
 	
-	
+	//Draw Sol Glace
+
+	dsSetColor(0, 0, 0);
+	dTriIndex* TrianglesGlace = (dTriIndex*)::TrianglesGlace;
+
+
+
+	{const dReal* Pos = dGeomGetPosition(TriMesh1);
+	const dReal* Rot = dGeomGetRotation(TriMesh1);
+
+	{for (int i = 0; i < Nomdre_de_triangles / 3; i++) {
+		const dReal v[9] = { // explicit conversion from float to dReal
+		  ArêtesGlace[TrianglesGlace[i * 3 + 0] * 3 + 0],
+		  ArêtesGlace[TrianglesGlace[i * 3 + 0] * 3 + 1],
+		  ArêtesGlace[TrianglesGlace[i * 3 + 0] * 3 + 2],
+		  ArêtesGlace[TrianglesGlace[i * 3 + 1] * 3 + 0],
+		  ArêtesGlace[TrianglesGlace[i * 3 + 1] * 3 + 1],
+		  ArêtesGlace[TrianglesGlace[i * 3 + 1] * 3 + 2],
+		  ArêtesGlace[TrianglesGlace[i * 3 + 2] * 3 + 0],
+		  ArêtesGlace[TrianglesGlace[i * 3 + 2] * 3 + 1],
+		  ArêtesGlace[TrianglesGlace[i * 3 + 2] * 3 + 2]
+		};
+
+		dsDrawTriangle(Pos, Rot, &v[0], &v[3], &v[6], 1);
+	}}}
+
 	// fixed or not-fixed camera
 	
 		if(client) {
@@ -803,6 +867,30 @@ int main(int argc, char** argv){
     //dGeomSetRotation(ground_box, R);
 
     createHField(space);
+
+	//Sol glace
+	const unsigned preprocessFlags = (1U << dTRIDATAPREPROCESS_BUILD_CONCAVE_EDGES) | (1U << dTRIDATAPREPROCESS_BUILD_FACE_ANGLES);
+	TriData1 = dGeomTriMeshDataCreate();
+	dGeomTriMeshDataBuildSingle(TriData1, &ArêtesGlace[0], 3 * sizeof(float), Nombre_de_sommets, (dTriIndex*)&TrianglesGlace[0], Nomdre_de_triangles, 3 * sizeof(dTriIndex));
+	dGeomTriMeshDataPreprocess2(TriData1, preprocessFlags, NULL);
+	TriMesh1 = dCreateTriMesh(space, TriData1, 0, 0, 0);
+	dGeomSetData(TriMesh1, TriData1);
+
+	dTriMeshDataID new_tmdata = dGeomTriMeshDataCreate();
+	dGeomTriMeshDataBuildSingle(new_tmdata, &ArêtesGlace[0], 3 * sizeof(float), Nombre_de_sommets,
+		(dTriIndex*)&TrianglesGlace[0], Nomdre_de_triangles, 3 * sizeof(dTriIndex));
+	dGeomTriMeshDataPreprocess2(new_tmdata, (1U << dTRIDATAPREPROCESS_BUILD_FACE_ANGLES), NULL);
+
+
+	obj[0].geom[0] = dCreateTriMesh(space, new_tmdata, 0, 0, 0);
+
+	// remember the mesh's dTriMeshDataID on its userdata for convenience.
+	dGeomSetData(obj[0].geom[0], new_tmdata);
+
+	dMassSetTrimesh(&m, DENSITY, obj[0].geom[0]);
+	printf("mass at %f %f %f\n", m.c[0], m.c[1], m.c[2]);
+	dGeomSetPosition(obj[0].geom[0], -m.c[0], -m.c[1], -m.c[2]);
+	dMassTranslate(&m, -m.c[0], -m.c[1], -m.c[2]);
         
     // run simulation
     dsSimulationLoop(argc, argv, 1000, 800, &fn);
