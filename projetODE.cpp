@@ -650,15 +650,15 @@ static void simLoop(int pause)
 
 	{for (int i = 0; i < Nomdre_de_triangles / 3; i++) {
 		const dReal v[9] = { // explicit conversion from float to dReal
-		  ArêtesGlace[TrianglesGlace[i * 3 + 0] * 3 + 0],
-		  ArêtesGlace[TrianglesGlace[i * 3 + 0] * 3 + 1],
-		  ArêtesGlace[TrianglesGlace[i * 3 + 0] * 3 + 2],
-		  ArêtesGlace[TrianglesGlace[i * 3 + 1] * 3 + 0],
-		  ArêtesGlace[TrianglesGlace[i * 3 + 1] * 3 + 1],
-		  ArêtesGlace[TrianglesGlace[i * 3 + 1] * 3 + 2],
-		  ArêtesGlace[TrianglesGlace[i * 3 + 2] * 3 + 0],
-		  ArêtesGlace[TrianglesGlace[i * 3 + 2] * 3 + 1],
-		  ArêtesGlace[TrianglesGlace[i * 3 + 2] * 3 + 2]
+		  AretesGlace[TrianglesGlace[i * 3 + 0] * 3 + 0],
+		  AretesGlace[TrianglesGlace[i * 3 + 0] * 3 + 1],
+		  AretesGlace[TrianglesGlace[i * 3 + 0] * 3 + 2],
+		  AretesGlace[TrianglesGlace[i * 3 + 1] * 3 + 0],
+		  AretesGlace[TrianglesGlace[i * 3 + 1] * 3 + 1],
+		  AretesGlace[TrianglesGlace[i * 3 + 1] * 3 + 2],
+		  AretesGlace[TrianglesGlace[i * 3 + 2] * 3 + 0],
+		  AretesGlace[TrianglesGlace[i * 3 + 2] * 3 + 1],
+		  AretesGlace[TrianglesGlace[i * 3 + 2] * 3 + 2]
 		};
 
 		dsDrawTriangle(Pos, Rot, &v[0], &v[3], &v[6], 1);
@@ -871,13 +871,13 @@ int main(int argc, char** argv){
 	//Sol glace
 	const unsigned preprocessFlags = (1U << dTRIDATAPREPROCESS_BUILD_CONCAVE_EDGES) | (1U << dTRIDATAPREPROCESS_BUILD_FACE_ANGLES);
 	TriData1 = dGeomTriMeshDataCreate();
-	dGeomTriMeshDataBuildSingle(TriData1, &ArêtesGlace[0], 3 * sizeof(float), Nombre_de_sommets, (dTriIndex*)&TrianglesGlace[0], Nomdre_de_triangles, 3 * sizeof(dTriIndex));
+	dGeomTriMeshDataBuildSingle(TriData1, &AretesGlace[0], 3 * sizeof(float), Nombre_de_sommets, (dTriIndex*)&TrianglesGlace[0], Nomdre_de_triangles, 3 * sizeof(dTriIndex));
 	dGeomTriMeshDataPreprocess2(TriData1, preprocessFlags, NULL);
 	TriMesh1 = dCreateTriMesh(space, TriData1, 0, 0, 0);
 	dGeomSetData(TriMesh1, TriData1);
 
 	dTriMeshDataID new_tmdata = dGeomTriMeshDataCreate();
-	dGeomTriMeshDataBuildSingle(new_tmdata, &ArêtesGlace[0], 3 * sizeof(float), Nombre_de_sommets,
+	dGeomTriMeshDataBuildSingle(new_tmdata, &AretesGlace[0], 3 * sizeof(float), Nombre_de_sommets,
 		(dTriIndex*)&TrianglesGlace[0], Nomdre_de_triangles, 3 * sizeof(dTriIndex));
 	dGeomTriMeshDataPreprocess2(new_tmdata, (1U << dTRIDATAPREPROCESS_BUILD_FACE_ANGLES), NULL);
 

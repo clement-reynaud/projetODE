@@ -23,7 +23,7 @@ float x8 = -cos(54) * R;
 float y8 = sin(54) * R;
 
 
-float Arêtes[Nombre_de_sommets * 3] = {
+float Aretes[Nombre_de_sommets * 3] = {
 	0.0f, 0.0f, 0.0f,
 	R, 0.0f, 0.0f,
 	x1, y, 0.0f,
